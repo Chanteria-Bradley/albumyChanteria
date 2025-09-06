@@ -7,7 +7,10 @@
 """
 import os
 import uuid
-
+import requests
+import torch
+from tqdm import tqdm
+import pandas as pd
 try:
     from urlparse import urlparse, urljoin
 except ImportError:
