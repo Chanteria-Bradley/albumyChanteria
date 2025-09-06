@@ -10,7 +10,6 @@ from transformers import AutoProcessor, AutoModelForCausalLM
 import requests
 import torch
 from PIL import Image
-from transformers import *
 from tqdm import tqdm
 
 
