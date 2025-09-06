@@ -6,6 +6,13 @@
     :license: MIT, see LICENSE for more details.
 """
 import os
+from transformers import AutoProcessor, AutoModelForCausalLM
+import requests
+import torch
+from PIL import Image
+from transformers import *
+from tqdm import tqdm
+
 
 from flask import render_template, flash, redirect, url_for, current_app, \
     send_from_directory, request, abort, Blueprint
@@ -20,7 +27,13 @@ from albumy.notifications import push_comment_notification, push_collect_notific
 from albumy.utils import rename_image, resize_image, redirect_back, flash_errors
 
 main_bp = Blueprint('main', __name__)
+df = pd.read_csv("/content/images.csv")
+alt_text = []
+device = "cuda" if torch.cuda.is_available() else "cpu"
 
+finetuned_model = VisionEncoderDecoderModel.from_pretrained("nlpconnect/vit-gpt2-image-captioning").to(device)
+finetuned_tokenizer = GPT2TokenizerFast.from_pretrained("nlpconnect/vit-gpt2-image-captioning")
+finetuned_image_processor = ViTImageProcessor.from_pretrained("nlpconnect/vit-gpt2-image-captioning")
 
 @main_bp.route('/')
 def index():
@@ -143,7 +156,7 @@ def show_photo(photo_id):
     per_page = current_app.config['ALBUMY_COMMENT_PER_PAGE']
     pagination = Comment.query.with_parent(photo).order_by(Comment.timestamp.asc()).paginate(page, per_page)
     comments = pagination.items
-
+    
     comment_form = CommentForm()
     description_form = DescriptionForm()
     tag_form = TagForm()
@@ -253,8 +266,23 @@ def edit_description(photo_id):
 
     flash_errors(form)
     return redirect(url_for('.show_photo', photo_id=photo_id))
-
-
+    
+  @main_bp.route('/photo/<int:photo_id>/description', methods=['POST'])  
+  def generate_caption(processor, model, photo_id):
+    photo = Photo.query.get_or_404(photo_id)
+    inputs = processor(images=photo_id, return_tensors="pt").to(device)
+    generated_ids = model.generate(pixel_values=inputs.pixel_values, max_length=50)
+    generated_caption = processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
+    for i in tqdm(range(len(df))):
+        url = str(df.iloc[i][0])
+        try:
+            image = Image.open(requests.get(url, stream=True).raw)
+            caption = generate_caption(git_processor, git_model, image)
+            alt_text.append(caption)
+        except:
+            alt_text.append("NaN")
+    return generated_caption  
+      
 @main_bp.route('/photo/<int:photo_id>/comment/new', methods=['POST'])
 @login_required
 @permission_required('COMMENT')
