@@ -152,20 +152,20 @@ def generate_description_photo(image_path):
         return Image.open(image_path)
         
 @main_bp.route('/photo/<int:image_path>/generate-description', methods=['Post'])  
-def generate_description(processor, model, image_path):
-    photo = Photo.query.get_or_404(photo_id)
+def generate_description(processor, tokenizer, model, image_path):
     inputs = processor(images= Image, return_tensors="pt").to(device)
     generated_ids = model.generate(pixel_values=inputs.pixel_values, max_length=50)
-    generate_description = processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
-    for i in tqdm(range(len(df))):
-        url = str(df.iloc[i][0])
+    generated_description = tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
+    alt_text= []
+    if generate_description_photo(image_path):
+        url = url_for('.show_photo', photo_id=photo_id)
         try:
             image = Image.open(requests.get(url, stream=True).raw)
-            caption = generate_description(finetuned_image_processor, finetuned_model, image_path)
+            description = generate_description(finetuned_image_processor, finetuned_model, image_path)
             alt_text.append(description)
         except:
             alt_text.append("NaN")
-    return generate_description  
+    return generated_description 
 
 @main_bp.route('/photo/<int:photo_id>')
 def show_photo(photo_id):
