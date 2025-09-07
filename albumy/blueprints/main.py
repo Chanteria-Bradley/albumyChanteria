@@ -143,7 +143,7 @@ def upload():
         db.session.commit()
     return render_template('main/upload.html')
     
-@main_bp.route('/photo/<int:photo_id>/generated-description-photo')
+@main_bp.route('/photo/<int:image_path>/generated-description-photo')
 def generate_description_photo(image_path):
     image = Image.open(image_path)
     if os.path.exists(image_path):
@@ -151,21 +151,21 @@ def generate_description_photo(image_path):
     elif os.path.exists(image_path):
         return Image.open(image_path)
         
-@main_bp.route('/photo/<int:photo_id>/generatedescription', methods=['Post'])  
-def generate_description(processor, model, photo_id):
+@main_bp.route('/photo/<int:image_path>/generate-description', methods=['Post'])  
+def generate_description(processor, model, image_path):
     photo = Photo.query.get_or_404(photo_id)
-    inputs = processor(images= photo, return_tensors="pt").to(device)
+    inputs = processor(images= Image, return_tensors="pt").to(device)
     generated_ids = model.generate(pixel_values=inputs.pixel_values, max_length=50)
-    generated_caption = processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
+    generate_description = processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
     for i in tqdm(range(len(df))):
         url = str(df.iloc[i][0])
         try:
             image = Image.open(requests.get(url, stream=True).raw)
-            caption = generate_description(git_processor, git_model, image)
+            caption = generate_description(finetuned_image_processor, finetuned_model, image_path)
             alt_text.append(description)
         except:
             alt_text.append("NaN")
-    return generated_description  
+    return generate_description  
 
 @main_bp.route('/photo/<int:photo_id>')
 def show_photo(photo_id):
