@@ -10,7 +10,6 @@ from transformers import VisionEncoderDecoderModel, GPT2TokenizerFast, ViTImageP
 import requests
 import torch
 from PIL import Image
-from tqdm import tqdm
 
 from flask import render_template, flash, redirect, url_for, current_app, \
     send_from_directory, request, abort, Blueprint
@@ -142,26 +141,18 @@ def upload():
         db.session.add(photo)
         db.session.commit()
     return render_template('main/upload.html')
-    
-@main_bp.route('/photo/<int:image_path>/generated-description-photo')
-def generate_description_photo(image_path):
-    image = Image.open(image_path)
-    if os.path.exists(image_path):
-        return Image.open(requests.get(image_path, stream=True).raw)
-    elif os.path.exists(image_path):
-        return Image.open(image_path)
         
-@main_bp.route('/photo/<int:image_path>/generate-description', methods=['Post'])  
+@main_bp.route('/photo/<int:image_path>/generate-description', methods=['POST'])  
 def generate_description(processor, tokenizer, model, image_path):
-    inputs = processor(images= Image, return_tensors="pt").to(device)
-    generated_ids = model.generate(pixel_values=inputs.pixel_values, max_length=50)
-    generated_description = tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
+    image = Image.open(image_path)
+    inputs = image_processor(images= Image, return_tensors="pt").to(device)
+    generated_ids = finetuned_model.generate(pixel_values=inputs.pixel_values, max_length=50)
+    generated_description = finetuned_tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
     alt_text= []
-    if generate_description_photo(image_path):
-        url = url_for('.show_photo', photo_id=photo_id)
+    for imgpth in image_paths:
         try:
-            image = Image.open(requests.get(url, stream=True).raw)
-            description = generate_description(finetuned_image_processor, finetuned_model, image_path)
+            image = Image.open(requests.get(imgpth, stream=True).raw)
+            description = generate_description(finetuned_image_processor, finetuned_model, image)
             alt_text.append(description)
         except:
             alt_text.append("NaN")
