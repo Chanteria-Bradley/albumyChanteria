@@ -148,8 +148,8 @@ def generate_description(image_path):
     image = Image.open(image_path)
     inputs = fintetuned_processor(images= Image, return_tensors="pt").to(device)
     inputs.pixel_values = inputs.pixel_values.to(device)
-    generated_ids = finetuned_model.generate(pixel_values=inputs.pixel_values, max_length=50)
-    generated_description = finetuned_tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
+    generated_to = finetuned_model.generate(pixel_values=inputs.pixel_values, max_length=50)
+    generated_description = finetuned_tokenizer.batch_decode(generated_to, skip_special_tokens=True)[0]
     image_paths= [...]
     alt_text= []
     for imgpth in image_paths:
