@@ -10,6 +10,7 @@ from transformers import VisionEncoderDecoderModel, GPT2TokenizerFast, ViTImageP
 import requests
 import torch
 from PIL import Image
+import clip
 
 from flask import render_template, flash, redirect, url_for, current_app, \
     send_from_directory, request, abort, Blueprint
@@ -153,12 +154,9 @@ def generate_description(image_path):
     image_paths= [...]
     alt_text= []
     for imgpth in image_paths:
-        try:
-            image = Image.open(requests.get(imgpth, stream=True).raw)
-            description = generate_description(finetuned_image_processor, finetuned_model, image)
-            alt_text.append(description)
-        except:
-            alt_text.append("Error")
+        image = Image.open(requests.get(imgpth, stream=True).raw)
+        description = generate_description(finetuned_image_processor, finetuned_model, image)
+        alt_text.append(description)
         return generated_description 
 
 @main_bp.route('/photo/<int:photo_id>')
