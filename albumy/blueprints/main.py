@@ -142,12 +142,15 @@ def upload():
         db.session.commit()
     return render_template('main/upload.html')
         
-@main_bp.route('/photo/<int:image_path>/generate-description', methods=['POST'])  
-def generate_description(processor, tokenizer, model, image_path):
+@main_bp.route('/photo/<int:image_path>/generate-description', methods=['POST']) 
+@login_required
+def generate_description(image_path):
     image = Image.open(image_path)
-    inputs = image_processor(images= Image, return_tensors="pt").to(device)
+    inputs = fintetuned_processor(images= Image, return_tensors="pt").to(device)
+    inputs.pixel_values = inputs.pixel_values.to(device)
     generated_ids = finetuned_model.generate(pixel_values=inputs.pixel_values, max_length=50)
     generated_description = finetuned_tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
+    image_paths= [...]
     alt_text= []
     for imgpth in image_paths:
         try:
@@ -156,7 +159,7 @@ def generate_description(processor, tokenizer, model, image_path):
             alt_text.append(description)
         except:
             alt_text.append("NaN")
-    return generated_description 
+        return generated_description 
 
 @main_bp.route('/photo/<int:photo_id>')
 def show_photo(photo_id):
