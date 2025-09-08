@@ -158,7 +158,7 @@ def generate_description(image_path):
             description = generate_description(finetuned_image_processor, finetuned_model, image)
             alt_text.append(description)
         except:
-            alt_text.append("NaN")
+            alt_text.append("Error")
         return generated_description 
 
 @main_bp.route('/photo/<int:photo_id>')
